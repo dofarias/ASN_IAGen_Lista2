@@ -84,3 +84,30 @@ def test_priority_label_critical_for_zero_stock(data):
     )
     labels = dict(zip(table["product_name"], table["priority"]))
     assert labels["Hanging Basket"] == "Critico"
+
+
+def test_priority_labels_full_classification(data):
+    # TEST-007 (completo): RN-007 opcao A, limiar 30% do reorder_level.
+    # Hanging Basket: estoque 0 -> Critico
+    # Hand Cultivator: 3 de 10 (30%) -> Critico
+    # Tomato Seeds 'Roma': 5 de 40 (12,5%) -> Critico
+    # Orchid Food: 6 de 10 (60%), vendas 2 -> Atencao
+    # Pothos 'Golden': 8 de 12 (67%), vendas 5 -> Urgente
+    table = metrics.priority_table(
+        data.products, data.categories, data.suppliers,
+        data.orders, data.order_items,
+    )
+    labels = dict(zip(table["product_name"], table["priority"]))
+    assert labels["Hanging Basket"] == "Critico"
+    assert labels["Hand Cultivator"] == "Critico"
+    assert labels["Tomato Seeds 'Roma'"] == "Critico"
+    assert labels["Orchid Food"] == "Atencao"
+    assert labels["Pothos 'Golden'"] == "Urgente"
+
+
+def test_priority_label_unit_rules():
+    # Verificacao direta da funcao de classificacao.
+    assert metrics._priority_label(0, 10, 0) == "Critico"      # zerado
+    assert metrics._priority_label(3, 10, 0) == "Critico"      # 30% do minimo
+    assert metrics._priority_label(4, 10, 2) == "Atencao"      # 40%, vendas baixas
+    assert metrics._priority_label(4, 10, 5) == "Urgente"      # 40%, vendas altas

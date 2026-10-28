@@ -12,8 +12,13 @@ import pandas as pd
 CANCELLED_STATUS = "cancelled"
 
 # Limiar de "volume de vendas alto" que separa Urgente de Atencao no
-# semaforo (SPEC-OPEN-001). Proposta inicial: >= 5 unidades.
+# semaforo (SPEC-OPEN-001). >= 5 unidades.
 HIGH_SALES_THRESHOLD = 5
+
+# Fracao do reorder_level abaixo da qual o estoque e considerado "muito
+# abaixo do minimo" e o produto e classificado como Critico (RN-007).
+# Ex.: 0.30 => estoque <= 30% do nivel de reposicao.
+CRITICAL_STOCK_RATIO = 0.30
 
 
 # --- Helpers -----------------------------------------------------------
@@ -83,9 +88,19 @@ def sales_volume_by_product(
 
 # --- Tabela de prioridade e semaforo ----------------------------------
 
-def _priority_label(quantity_on_hand: int, sales_volume: int) -> str:
-    """RN-007: classifica o produto em alerta (Critico/Urgente/Atencao)."""
+def _priority_label(
+    quantity_on_hand: int, reorder_level: int, sales_volume: int
+) -> str:
+    """RN-007: classifica o produto em alerta (Critico/Urgente/Atencao).
+
+    - Critico: estoque zerado OU muito abaixo do minimo
+      (quantity_on_hand <= CRITICAL_STOCK_RATIO * reorder_level).
+    - Urgente: em alerta com volume de vendas alto (>= HIGH_SALES_THRESHOLD).
+    - Atencao: demais produtos em alerta.
+    """
     if quantity_on_hand == 0:
+        return "Critico"
+    if quantity_on_hand <= CRITICAL_STOCK_RATIO * reorder_level:
         return "Critico"
     if sales_volume >= HIGH_SALES_THRESHOLD:
         return "Urgente"
@@ -129,7 +144,9 @@ def priority_table(
     ).round(2)
     alert["priority"] = alert.apply(
         lambda r: _priority_label(
-            int(r["quantity_on_hand"]), int(r["sales_volume"])
+            int(r["quantity_on_hand"]),
+            int(r["reorder_level"]),
+            int(r["sales_volume"]),
         ),
         axis=1,
     )

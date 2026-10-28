@@ -166,7 +166,7 @@ Prioridades: Must (obrigatório), Should (importante), Could (desejável). Os cr
 - **RN-004 — Produto crítico (estoque zerado):** `quantity_on_hand = 0`. É um subconjunto mais grave de "em alerta", não uma categoria separada.
 - **RN-005 — Descontinuados:** produtos com `discontinued = true` não recebem recomendação de reposição e não entram nos KPIs de produtos ativos.
 - **RN-006 — Valor do estoque:** `cost × quantity_on_hand`, considerando apenas produtos ativos. Usa custo (capital investido), não preço de venda.
-- **RN-007 — Prioridade (semáforo):** Crítico (`quantity_on_hand = 0`); Urgente (`0 < quantity_on_hand <= reorder_level` com volume de vendas alto); Atenção (`0 < quantity_on_hand <= reorder_level` com volume de vendas baixo ou médio).
+- **RN-007 — Prioridade (semáforo):** Crítico (`quantity_on_hand = 0` ou `quantity_on_hand <= 0,30 × reorder_level`, isto é, estoque zerado ou muito abaixo do mínimo); Urgente (em alerta, não crítico, com volume de vendas alto `>= 5`); Atenção (demais produtos em alerta).
 - **RN-008 — Prevenção de duplicação:** a posição de estoque vem de `products` (uma linha por produto); o volume de vendas é agregado por produto a partir de `order_items` **antes** de qualquer junção com `products`, para não multiplicar saldos nem valores.
 
 > **Decisão do usuário sobre cores:** o enunciado da Lista 2 pede para não usar a cor vermelha (reservada às correções). O usuário optou por **manter** o semáforo da Lista 1 nas cores vermelho/laranja/amarelo. Esta decisão diverge da instrução do enunciado e está registrada como tal em DP-001, para permitir revisão futura.
