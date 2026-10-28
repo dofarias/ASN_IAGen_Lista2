@@ -1,0 +1,29 @@
+# Ambiente virtual Python
+.venv/
+venv/
+env/
+
+# Cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Cache de ferramentas
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Configurações locais de IDE/editor
+.vscode/
+.idea/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Enunciado e materiais de origem que nao fazem parte do projeto entregue
+lista_02.docx
+IAGP_Lista1-Daniele_Farias.docx
+
+# Modelos em branco (os documentos preenchidos estao na raiz)
+templates/
