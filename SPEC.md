@@ -139,13 +139,13 @@ flowchart TD
 
 - **Origem:** RF-007, RN-007.
 - **Descrição:** classificar cada produto em alerta em Crítico, Urgente ou Atenção.
-- **Regra:**
-  - **Crítico:** `quantity_on_hand == 0`.
-  - **Urgente:** `0 < quantity_on_hand <= reorder_level` e volume de vendas **alto**.
-  - **Atenção:** `0 < quantity_on_hand <= reorder_level` e volume de vendas **baixo ou médio**.
-- **Definição de "volume alto":** limiar explícito a ser fixado na implementação e documentado aqui quando definido. Proposta inicial: "alto" = volume de vendas `>= 5` unidades (mediana aproximada dos itens em alerta no conjunto atual). Decisão registrada em SPEC-OPEN-001 até ser confirmada com um teste.
+- **Regra (opção A, combina nível de estoque e vendas):**
+  - **Crítico:** `quantity_on_hand == 0` **ou** `quantity_on_hand <= 0,30 × reorder_level` (estoque zerado ou muito abaixo do mínimo).
+  - **Urgente:** em alerta, não crítico, e volume de vendas **alto** (`>= 5` unidades).
+  - **Atenção:** demais produtos em alerta.
+- **Constantes (em `src/metrics.py`):** `CRITICAL_STOCK_RATIO = 0.30`; `HIGH_SALES_THRESHOLD = 5`.
 - **Cores:** Crítico = vermelho, Urgente = laranja, Atenção = amarelo (decisão DP-001; diverge do enunciado).
-- **Critérios de aceitação:** Hanging Basket (estoque 0) → Crítico; os demais classificados conforme o limiar definido, de forma determinística e coberta por teste.
+- **Critérios de aceitação (conjunto completo):** Hanging Basket (0) → Crítico; Hand Cultivator (3 de 10 = 30%) → Crítico; Tomato Seeds 'Roma' (5 de 40 = 12,5%) → Crítico; Orchid Food (6 de 10 = 60%, vendas 2) → Atenção; Pothos 'Golden' (8 de 12 = 67%, vendas 5) → Urgente. Coberto por teste (TEST-007).
 
 ### REQ-008 — Volume de vendas por produto (sem cancelados)
 
@@ -227,13 +227,13 @@ Valores calculados sobre o conjunto completo (verificados):
 
 **Produtos em alerta (ativos):**
 
-| Produto | Categoria | Estoque | Nível reposição | Déficit | Vendas (sem cancelados) | Valor estoque (cost×qty) |
-| --- | --- | --- | --- | --- | --- | --- |
-| Hanging Basket | Pots & Planters | 0 | 10 | 10 | 0 | 0.00 |
-| Hand Cultivator | Tools | 3 | 10 | 7 | 2 | 10.50 |
-| Tomato Seeds 'Roma' | Seeds & Bulbs | 5 | 40 | 35 | 4 | 4.50 |
-| Orchid Food | Fertilizer | 6 | 10 | 4 | 2 | 24.00 |
-| Pothos 'Golden' | Houseplants | 8 | 12 | 4 | 5 | 40.00 |
+| Produto | Categoria | Estoque | Nível reposição | Déficit | Vendas (sem cancelados) | Valor estoque (cost×qty) | Prioridade |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Hanging Basket | Pots & Planters | 0 | 10 | 10 | 0 | 0.00 | Crítico |
+| Hand Cultivator | Tools | 3 | 10 | 7 | 2 | 10.50 | Crítico |
+| Tomato Seeds 'Roma' | Seeds & Bulbs | 5 | 40 | 35 | 4 | 4.50 | Crítico |
+| Orchid Food | Fertilizer | 6 | 10 | 4 | 2 | 24.00 | Atenção |
+| Pothos 'Golden' | Houseplants | 8 | 12 | 4 | 5 | 40.00 | Urgente |
 
 **Top vendas (sem cancelados), dois maiores:** Sunflower Seeds = 12; Terracotta Pot 8in = 9.
 
@@ -331,7 +331,7 @@ Alterações relevantes devem identificar o requisito afetado, justificar a muda
 
 | ID | Descrição | Impacto | Responsável | Status |
 | --- | --- | --- | --- | --- |
-| SPEC-OPEN-001 | Limiar de "volume de vendas alto" para separar Urgente de Atenção no semáforo. | Médio (afeta classificação de linhas) | Daniele Farias | Resolvido: `>= 5` (`HIGH_SALES_THRESHOLD` em `src/metrics.py`), coberto por teste |
+| SPEC-OPEN-001 | Regra do semáforo de prioridade. | Médio (afeta classificação de linhas) | Daniele Farias | Resolvido (opção A): Crítico se estoque zerado ou `<= 0,30 × reorder_level`; Urgente se vendas `>= 5`; Atenção nos demais. Constantes `CRITICAL_STOCK_RATIO=0.30` e `HIGH_SALES_THRESHOLD=5` em `src/metrics.py`, coberto por teste. |
 | SPEC-OPEN-002 | Valor de "top N" do gráfico de vendas. | Baixo | Daniele Farias | Resolvido: top 10 (`app.py`) |
 
 ## 19. Histórico de versões
@@ -340,3 +340,4 @@ Alterações relevantes devem identificar o requisito afetado, justificar a muda
 | --- | --- | --- | --- |
 | 1.0 | 2026-10-28 | Criação inicial a partir do brainstorm da Lista 2 | Draft |
 | 1.1 | 2026-10-28 | Implementação concluída (data_loader, metrics, filters, app Streamlit); 19 testes pytest passando; SPEC-OPEN-001 e SPEC-OPEN-002 resolvidas | Implemented |
+| 1.2 | 2026-10-28 | Semáforo ajustado (opção A: combina nível de estoque e vendas, limiar 30% do `reorder_level`); RN-007 e tabela de referência atualizadas; 21 testes passando | Implemented |
